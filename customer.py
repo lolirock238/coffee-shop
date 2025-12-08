@@ -1,44 +1,64 @@
-from order import Order
 class Customer:
-    all_orders = []
-
-    def __init__(self, name, ch):
-
-        if not isinstance(name, str):
-            raise ValueError("name must be a string")
-        self._name = name
-
-        if not isinstance(ch, int):
-            raise ValueError("ch must be an integer.")
-
-        if not (1 <= ch <= 15):
-            raise ValueError("ch must be between 1 and 15.")
-        self._ch = ch
-
-        self._orders = []
-
+    all_customers = []
+    
+    def __init__(self, name):
+        self._name = None
+        self.name = name
+        Customer.all_customers.append(self)
+    
     @property
     def name(self):
         return self._name
-
-    def order_coffee(self, coffee, price):
-        """Create a new Order instance"""
-        return Order(self, coffee, price)
-
+    
+    @name.setter
+    def name(self, value):
+        if not isinstance(value, str):
+            raise ValueError("Name must be a string")
+        if not 1 <= len(value) <= 15:
+            raise ValueError("Name must be between 1 and 15 characters")
+        self._name = value
+    
+    def create_order(self, coffee, price):
+        from order import Order
+        order = Order(self, coffee, price)
+        return order
+    
     @property
     def orders(self):
-        return self._orders
-
+        from order import Order
+        return [order for order in Order.all if order.customer == self]
+    
     @property
     def coffees(self):
-        return list({order.coffee for order in self._orders})
-
+        return list({order.coffee for order in self.orders})
+    
     @property
     def num_orders(self):
-        return len(self._orders)
-
+        return len(self.orders)
+    
     @property
     def average_price(self):
-        if len(self._orders) == 0:
+        if not self.orders:
             return 0
-        return sum(order.price for order in self._orders) / len(self._orders)
+        return sum(order.price for order in self.orders) / len(self.orders)
+    
+    @classmethod
+    def most_aficionado(cls, coffee):
+        from coffee import Coffee
+        if not isinstance(coffee, Coffee):
+            raise ValueError("Must provide a Coffee instance")
+        
+        max_spent = -1
+        top_customer = None
+        
+        for customer in cls.all_customers:
+            customer_total = 0
+            for order in customer.orders:
+                if order.coffee == coffee:
+                    customer_total += order.price
+            
+            if customer_total > max_spent:
+                max_spent = customer_total
+                top_customer = customer
+        
+        return top_customer if max_spent > 0 else None
